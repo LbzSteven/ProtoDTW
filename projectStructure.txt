@@ -1,0 +1,14 @@
+------ProtoPDTW
+    |----model.py-----The prototype model
+    |----classifier_feature.py----Get the pretrained model's feature.
+    |----helpers.py
+        |----list_of_distances
+        |----make_one_hot
+        |----makedir
+        |----print and write
+        |----find_high_activation_crop
+    |----log.py: create_logger
+    |----push.py: Process the push step in the training process.
+    |----receptive_field.py: compute receptive field in the model.
+    |----settings: record the parameter_settings.
+    |----train_and_test: create training and testing functions.
