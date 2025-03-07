@@ -63,7 +63,7 @@ class PPNet(nn.Module):
 
         if add_on_layers_type == 'bottleneck':
             add_on_layers = []
-            current_in_channels = first_add_on_layer_in_channels
+            current_in_channels = first_add_on_layer_in_channels # TODO add pooling layers at this stage
             while (current_in_channels > self.prototype_shape[1]) or (len(add_on_layers) == 0):
                 current_out_channels = max(self.prototype_shape[1], (current_in_channels // 2))
                 add_on_layers.append(nn.Conv1d(in_channels=current_in_channels,
@@ -141,19 +141,25 @@ class PPNet(nn.Module):
         '''
         apply self.prototype_vectors as l2-convolution filters on input x
         '''
-        x2 = x ** 2
-        x2_patch_sum = F.conv1d(input=x2, weight=self.ones)
+        x2 = x ** 2  # x^2
+        stride = 1 #self.prototype_shape[-1]
+        x2_patch_sum = F.conv1d(input=x2, weight=self.ones, stride=stride)
 
         p2 = self.prototype_vectors ** 2
         p2 = torch.sum(p2, dim=(1, 2))
         # p2 is a vector of shape (num_prototypes,)
         # then we reshape it to (num_prototypes, 1, 1)
-        p2_reshape = p2.view(-1, 1)
+        p2_reshape = p2.view(-1, 1)  # p^2
 
-        xp = F.conv1d(input=x, weight=self.prototype_vectors)
-        intermediate_result = - 2 * xp + p2_reshape  # use broadcast
+        xp = F.conv1d(input=x, weight=self.prototype_vectors, stride=stride)  # xp
+        intermediate_result = x2_patch_sum - 2 * xp + p2_reshape  # use broadcast
         # x2_patch_sum and intermediate_result are of the same shape
-        distances = F.relu(x2_patch_sum + intermediate_result)
+        distances = F.relu(intermediate_result)  # x^2-2xp+p^2
+        # print("x2:", x2.shape, "self.ones:", self.ones.shape, "x2_patch_sum:", x2_patch_sum.shape)
+        # print("prototype_vectors:", self.prototype_vectors.shape, "p2:", p2.shape)
+        # print("intermediate_result:", intermediate_result.shape, "p2_reshape:", p2_reshape.shape)
+        # print("xp:", xp.shape, "distances:", distances.shape)
+        # input()
         return distances
 
     def prototype_distances(self, x):
@@ -269,7 +275,9 @@ class PPNet(nn.Module):
 
         self.set_last_layer_incorrect_connection(incorrect_strength=-0.5)
 
-def construct_PPNet(base_architecture, pretrained=True, weight_path=None, ts_length=224, in_channels=1, n_pred_classes=2,
+
+def construct_PPNet(base_architecture, pretrained=True, weight_path=None, ts_length=224, in_channels=1,
+                    n_pred_classes=2,
                     prototype_shape=(2000, 512, 1, 1), num_classes=200,
                     prototype_activation_function='log',
                     add_on_layers_type='bottleneck'):

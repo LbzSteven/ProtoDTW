@@ -246,6 +246,7 @@ def update_prototypes_on_batch(search_batch_input,
                 proto_act_ts_j = max_dist - proto_dist_ts_j
             else:
                 proto_act_ts_j = prototype_activation_function_in_numpy(proto_dist_ts_j)
+
             if original_ts_size == len(proto_act_ts_j):
                 upsampled_act_ts_j = proto_act_ts_j
             else:
